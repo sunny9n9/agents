@@ -1,17 +1,9 @@
-research_task:
+email_sorter:
   description: >
-    Conduct a thorough research about {topic}
-    Make sure you find any interesting and relevant information given
-    the current year is {current_year}.
+    Go through ten most recent of emails in users' inbox and classify them into three buckets - the ones which
+    require immediate attention, second which needs to be visited when time permits, and finally
+    the ones which can be ignored with no consequences whatsoever.
   expected_output: >
-    A list with 10 bullet points of the most relevant information about {topic}
-  agent: researcher
+    A sorted list of three buckets of output - High, Medium and Low, alias Urgent, Noble and Common
+  agent: mail_assistant
 
-reporting_task:
-  description: >
-    Review the context you got and expand each topic into a full section for a report.
-    Make sure the report is detailed and contains any and all relevant information.
-  expected_output: >
-    A fully fledged report with the main topics, each with a full section of information.
-    Formatted as markdown without '```'
-  agent: reporting_analyst
