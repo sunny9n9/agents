@@ -4,3 +4,4 @@ lib/
 .DS_Store
 src/helper_agent/tools/fuk.py
 tests/
+src/helper_agent/debug_files/

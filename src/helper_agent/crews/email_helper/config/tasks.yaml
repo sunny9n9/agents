@@ -1,9 +1,51 @@
 email_sorter:
   description: >
-    Go through ten most recent of emails in users' inbox and classify them into three buckets - the ones which
-    require immediate attention, second which needs to be visited when time permits, and finally
-    the ones which can be ignored with no consequences whatsoever.
+    Fetch recent emails from inbox using search_gmail with resource='messages'.
+    Classify EVERY email returned — do not skip any.
+    
+    urgent: Requires personal action or response within 24 hours.
+      - Job offers, interview calls, internship offers
+      - OTP, account security alerts
+      - Payment due, transaction failures
+      - Email addressed personally by name asking for a reply
+    
+    noble: Worth reading, no action needed.
+      - Personal market commentary addressed by name
+      - Bank statements, transaction confirmations
+      - Emails from known contacts with no action required
+    
+    common: Bulk, promotional, automated — no attention needed.
+      - Newsletters, digest feeds, daily market updates
+      - NFO offers, app feature announcements
+      - Compliance/regulatory bulk mailers (SEBI, BSE, company secretaries)
+      - Job alert digests (LinkedIn, Unstop)
+      - Any email with an unsubscribe link as primary content
+      - Repeated identical emails from same sender
+
   expected_output: >
-    A sorted list of three buckets of output - High, Medium and Low, alias Urgent, Noble and Common
+    Three clearly labelled sections - Urgent, Noble, Common.
+    Every fetched email must appear in exactly one section.
+    Format each entry as: "Sender - Subject - summary"
   agent: mail_assistant
 
+email_summary:
+  description: >
+    Take the list of email, read them all to know intentions of the sender 
+    and action they may expect reciever to convey through said email. 
+    Summarize their intent to a maximum of {num_sentence_summary} sentences. 
+    
+    Rules:
+    - Process EVERY email — never skip
+    - Maximum {num_sentence_summary} sentences per summary
+    - Preserve: sender email, subject, key intent, any action required
+    - If body is empty, return subject in body as well
+    - Do NOT invent content not present in the email
+    - Do NOT merge multiple emails into one
+
+  expected_output: >
+    A JSON object with an "emails" array. Each item has:
+    - sender: email address only, no display name
+    - subject: exact subject line
+    - body: 1-3 sentence summary of intent only
+  agent: mail_summarizer
+  
