@@ -1,0 +1,20 @@
+value_analysis_task:
+  description: >
+    Review and break down the following financial query, stock choice, or market concept presented by the user: "{user_question}". 
+    Consult your internal knowledge base literature (specifically pulling insights from Parag Parikh's frameworks). 
+    Evaluate the core risks, structural behavior traps, and valuation margins of safety associated with this topic.
+  expected_output: >
+    A strict, conservative analysis of '{user_question}', detailing specific defensive value metrics 
+    and behavioral warning signs to watch out for.
+  agent: MarginOfSafetyInvestor
+
+growth_synthesis_task:
+  description: >
+    Review the value analysis provided by the MarginOfSafetyInvestor regarding "{user_question}". 
+    Cross-reference this discussion with your internal growth-compounding knowledge base framework 
+    (specifically pulling insights from Saurabh Mukherjea's Coffee Can parameters like ROCE thresholds and revenue scaling). 
+    Synthesize the conservative warning flags with immediate expansion or compounding catalysts to finalize a balanced response.
+  expected_output: >
+    A final, comprehensive investment consultation that clearly weights the defensive margin of safety patterns 
+    (from Parag Parikh) directly against the high-growth checklist constraints (from Saurabh Mukherjea).
+  agent: HighGrowthInvestor
