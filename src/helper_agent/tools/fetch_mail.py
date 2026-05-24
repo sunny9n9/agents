@@ -13,14 +13,16 @@ from langchain_google_community import GmailToolkit
 from langchain_google_community.gmail.utils import get_gmail_credentials, build_gmail_service, get_google_credentials
 from crewai.tools import BaseTool
 from pydantic import BaseModel, PrivateAttr
-from typing import Any, Type
+from typing import Any, Type, DefaultDict
 import ollama
 import json
+import pathlib
 
 import re # because bad format never leaves me. too many shit format in emails as well
 def clean_text(text: str) -> str:
+    text = re.sub(r'\\u[0-9a-fA-F]{4}', ' ', text)
     text = re.sub(r'[\u0000-\u001f\u007f-\u009f\u00ad\u034f\u200b-\u200f\u2028\u2029\u202a-\u202e\u2060-\u206f\ufeff\ufff0-\uffff]', ' ', text)
-    text = re.sub(r'https?://\S+', '[link]', text)
+    text = re.sub(r'https?://\S+', ' ', text)
     text = re.sub(r'\s{2,}', ' ', text)
     return text.strip()
 
@@ -94,32 +96,64 @@ class PassthroughGmailTool(BaseTool):
     def _run(self, **kwargs) -> str:
         return self._lc_tool.run(kwargs) ##### Langchain expects dict passed positionally, do not use **kwargs
 
-
 def get_crew_gmail_tools():
     SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
-    CLIENT_SECRET_FILE = r"client_secret_269251185509-tbecd0tdd7tbsn5l916abtcqpmpujbti.apps.googleusercontent.com.json"
+    CLIENT_SECRET_FILE = r"client_secret_269251185509-8rqmhjv10c7la0u0esn2imfc6uhov88g.apps.googleusercontent.com.json"
 
-    # 1. Get Credentials 
-    my_credentials = get_google_credentials(token_file='token.json', client_secrets_file=CLIENT_SECRET_FILE, scopes=SCOPES)
-                                                    # IF this token.json does not exist yet, it will be generated AFTER my run and login to account
-    # 2. Create API
-    api = build_gmail_service(credentials=my_credentials) # builds the api
-    gmail_langchain_tools = GmailToolkit(api_resource=api) # takes the gmail api and wraps it to model(llm) - usable wrapper
+    # 0. Check if creadentials authentication already exist
+    TOKENS = ["token_primary", "token_secondary", "token_college"] # token (generated after auth) for my 3 mails
+    account_infos = {}
+
+    for _token in TOKENS:
+        token_path = f"{_token}.json"
+        my_credentials = get_google_credentials(
+            token_file=token_path,  # IF this token.json does not exist yet, it will be generated AFTER my run and login to account
+            client_secrets_file=CLIENT_SECRET_FILE, 
+            scopes=SCOPES
+        )
+        
+        api = build_gmail_service(credentials=my_credentials)  # builds the api
+        account_infos[_token] = GmailToolkit(api_resource=api) # takes the gmail api and wraps it to model(llm) - usable wrapper
+        # dictionary maps correct account to its corrosponding list of tokens
 
     SUMMARIZE_TOOLS = ['search_gmail', 'get_gmail_message', 'get_gmail_thread']
     ALLOWED_TOOLS = ['search_gmail' 
                      # 'get_gmail_message', # <--- No use having this as search_gmail returns body as well
                      # 'get_gmail_thread' # <--- Not useful for my use case
                      ]
-    crew_ver_tools = [
-        (SummarizingGmailTool if t.name in SUMMARIZE_TOOLS else PassthroughGmailTool)(
-            name=t.name,
-            description=t.description,
-            args_schema=t.args_schema,
-            lc_tool=t
-        )
-        for t in gmail_langchain_tools.get_tools() if t.name in ALLOWED_TOOLS 
+    
+    all_tools_flattened = [] # cuz the calling function expects a tool list given to it.
+    
+    # for accounts that need auth
+    for account in TOKENS:
+        
+        # create a clean identifier suffix (e.g., "personal", "misc", "college")
+        suffix = account.replace("token_", "") # change of name important cuz otherwise there will be conflict as same tools multiple copies for multiple accounts
+        
+        # pull the correct toolkit for this specific account
+        current_toolkit = account_infos[account]
+        
+        for _t in current_toolkit.get_tools():
+            if _t.name in ALLOWED_TOOLS:
+                # to edit function/tool names and their docstring/instructions for the LLM
+                unique_name = f"{_t.name}_{suffix}"
+                unique_desc = f"{_t.description} ONLY searches the {suffix} email account inbox."
+                
+                if _t.name in SUMMARIZE_TOOLS:
+                    all_tools_flattened.append(SummarizingGmailTool(
+                        name=unique_name,
+                        description=unique_desc,
+                        args_schema=_t.args_schema,
+                        lc_tool=_t
+                    ))
+                else:
+                    all_tools_flattened.append(PassthroughGmailTool(
+                        name=unique_name,
+                        description=unique_desc,
+                        args_schema=_t.args_schema,
+                        lc_tool=_t
+                    ))
         # while api generated on google cloud allows read only access, let us solidify it by giving it only read api
-        # may add other functionality in future using PassthroughGmailTool
-    ]
-    return crew_ver_tools
+        # may add other functionality in future using PassthroughGmailTool such as writing draft mails.
+    
+    return all_tools_flattened

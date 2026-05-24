@@ -29,7 +29,8 @@ class EmailHelper():
             config=self.agents_config['mail_assistant'], # type: ignore[index]
             verbose=True,
             # llm=self.gemini,
-            tools=self._gmail_tools 
+            tools=self._gmail_tools,
+            inject_date=True
         )
 
     @agent
@@ -38,7 +39,7 @@ class EmailHelper():
             config=self.agents_config['mail_summarizer'], # type: ignore[index]
             verbose=True,
             tools=self._gmail_tools,
-            llm=self.gemini
+            llm=self.gemini,
         )
     
     # To learn more about structured task outputs,
