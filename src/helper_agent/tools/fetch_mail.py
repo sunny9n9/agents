@@ -20,6 +20,8 @@ import pathlib
 
 import re # because bad format never leaves me. too many shit format in emails as well
 def clean_text(text: str) -> str:
+    text = text.replace('\\r', ' ').replace('\\n', ' ')
+    text = re.sub(r'[\r\n]+', ' ', text)
     text = re.sub(r'\\u[0-9a-fA-F]{4}', ' ', text)
     text = re.sub(r'[\u0000-\u001f\u007f-\u009f\u00ad\u034f\u200b-\u200f\u2028\u2029\u202a-\u202e\u2060-\u206f\ufeff\ufff0-\uffff]', ' ', text)
     text = re.sub(r'https?://\S+', ' ', text)
@@ -27,7 +29,7 @@ def clean_text(text: str) -> str:
     return text.strip()
 
 class SummarizingGmailTool(BaseTool):
-    name: str = ""
+    name: str = "fetch mails"
     description: str = ""
     args_schema: Type[BaseModel] = None
     _lc_tool: Any = PrivateAttr(default=None) #### We need to specify PrivateAttr as pydantic treats _xyz as class attr, and ignores it
