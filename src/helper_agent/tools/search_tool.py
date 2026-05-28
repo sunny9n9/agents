@@ -1,3 +1,5 @@
+from os import getenv
+import requests
 from crewai.tools import BaseTool
 from langchain_community.tools.yahoo_finance_news import YahooFinanceNewsTool
 from langchain_community.tools import DuckDuckGoSearchResults
@@ -34,3 +36,42 @@ class ddg_search(BaseTool):
     def _run(self, query: str) -> str:
         langchain_tool = DuckDuckGoSearchResults()
         return langchain_tool.invoke(query)
+    
+class jina_search(BaseTool):
+    name : str = "Scrape Websites With Jina Links"
+    description : str = "To get website content cleanly without header footer ads etc."
+    api : str = getenv("JINA_API_KEY")
+    
+    def _run(self, query: str) -> str:
+        try:
+            if not query.startswith("http"):
+                query = f"https://{query}"
+            
+            jina_url = f"https://r.jina.ai/{query}"
+                
+            # jina filters
+            headers = {
+                "Authorization" : f"Bearer {self.api}",
+                "X-With-Generated-Alt": "true",
+                "X-With-Links-Summary": "false",
+                "X-Return-Format": "text",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+                "X-Remove-Selector": (
+                    "header, footer, nav, aside, .ads, .advertisement, .banner, "
+                    ".sidebar, .popup, .modal, .newsletter, .subscribe, "
+                    ".comments, .social-share, .related, .recommended, "
+                    ".cookie, .cookie-banner, .paywall, script, style, noscript"
+                ),
+                "X-Target-Selector": "article, main",
+            }
+            response = requests.get(
+                url=jina_url,
+                headers=headers,
+                timeout=20
+            )
+
+            response.raise_for_status() # convert http failures into python exception
+            return response.text[:50000] # a very good idea - cap the response to save tokens ##################
+
+        except requests.exceptions.RequestException as e:
+            return f"[ERROR] :: Jina fetch failed :: {e}"

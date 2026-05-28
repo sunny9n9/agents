@@ -2,8 +2,10 @@
 __pycache__/
 lib/
 .DS_Store
-src/helper_agent/tools/fuk.py
+src/helper_agent/tools/test_tool.py
 tests/
 src/helper_agent/debug_files/
 *json
 knowledge/
+TODO.md
+src/helper_agent/crews/stock_expert/test_agents.py

@@ -1,25 +1,34 @@
 data_gathering_task:
   description: >
     The user's specific question is: "{user_question}"
-    You are gathering data for: {stock}
+    Target stock: {stock}.
+    Pass links one at a time to the scraping tool.
 
-    Step 1: FETCH TICKER & LATEST NEWS
-    Search DuckDuckGo to get the ticker symbol for {stock} and recent major news (last 3 months) specifically regarding stock splits, corporate actions, or earnings misses. 
-    Search yf_search() with the ticker of stock to get financial news
-    
-    Step 2: FETCH CURRENT VALUATION METRICS (CROSS-VALIDATION REQUIRED)
-    Search for "{stock} current share price P/E P/B" on BOTH screener.in and moneycontrol.com/tickertape.in.
-    You MUST extract the current share price from at least TWO different sources. If the prices differ by more than 2%, explicitly flag this discrepancy in your report.
+    ### STEP 1: PRIORITY ALERT SCAN
+    Search DuckDuckGo for "{stock} news today", "{stock} exchange notice BSE NSE",
+    "{stock} internal probe OR fraud OR penalty OR RBI action 2025 2026".
+    If ANY governance, regulatory, or fraud-related result appears, fetch that 
+    article IMMEDIATELY. Do not proceed until this scan is complete.
 
-    Step 3: FETCH FUNDAMENTAL FINANCIAL DATA
-    Scrape the most data-rich pagefor further information.
+    ### STEP 2: DISCOVER AND SCRAPE FINANCIAL PLATFORMS
+    Search DuckDuckGo for the exact URLs of {stock} on screener.in and tickertape.in.
+    Scrape BOTH URLs. Extract every single number and data point visible on the page.
+    Do not filter, do not summarize — dump everything.
+
+    ### STEP 3: EARNINGS DEEP DIVE
+    From the scraped pages, find the most recent earnings call transcript 
+    and/or investor presentation link. Fetch and read it.
+    Dump all management commentary, guidance, risk mentions, and one-time items verbatim or near-verbatim.
+
+    ### STEP 4: CORPORATE ACTIONS
+    Search for any stock splits, bonus issues, mergers, or acquisitions in the 
+    last 24 months.
 
   expected_output: >
-    A structured report containing:
-    1. Confirmed Ticker & Multi-Source Price Check (State the prices found and sources).
-    2. Corporate Actions (Explicitly state if any stock splits or bonuses occurred recently to explain price anomalies).
-    3. Cleaned Financial Metrics (FY24).
-    4. Recent News.
+    A raw, exhaustive data dump of everything retrieved. No summarization, 
+    no filtering, no interpretation. Include every number, every metric, every 
+    management quote, every news headline with its source URL. 
+    If a piece of data was on the page, it must be in this output.
   agent: DataGatherer
 
 value_analysis_task:
@@ -27,14 +36,13 @@ value_analysis_task:
     The user's specific question is: "{user_question}". Frame your entire value 
     analysis in context of this scenario for {stock}.
     
-    Identify the sector of underlying stock and then query your knowledge base for how to analyze this sector.
-    Consult your internal knowledge base literature for queries about strategies 
-    Review and break down the gathered financial data and market context for: "{stock}". 
-    (specifically pulling insights from Parag Parikh's frameworks). 
+    Identify the sector of underlying stock Consult your internal rag tool for literature about strategies , concept or applications
+    Rag tool is only to aid you for the concepts and strategies used by Value Researchers. So query not about stocks but about concepts.
+    Review and break down the gathered financial data and market context for: "{stock}" provided.
     Evaluate the core risks, structural behavior traps, and valuation margins of safety associated with this equity.
   expected_output: >
-    A strict, conservative analysis of '{stock}', detailing specific defensive value metrics 
-    and behavioral warning signs to watch out for.
+    A strict, conservative analysis of '{stock}', detailing specific defensive value metrics and opportunity costs.
+    Mention behavioral warning signs to watch out for. 
   agent: MarginOfSafetyInvestor
 
 growth_synthesis_task:
@@ -42,30 +50,33 @@ growth_synthesis_task:
     The user's specific question is: "{user_question}". Frame your growth analysis 
     specifically around whether this scenario for {stock} presents an opportunity 
     or a trap.
-    Identify the sector of underlying stock and then query your knowledge base for how to analyze this sector.
-    Consult your internal knowledge base literature if there is any query you have about strategy concept or applications
-    Review and break down the gathered financial data and market context for: "{stock}". 
-    (specifically pulling insights from Saurabh Mukherjea's Coffee Can parameters). 
+    Identify the sector of underlying stock Consult your internal rag tool if tliterature is any query you have about strategy, concept or applications
+    Rag tool is only to aid you for the concepts and strategies used by Growth Investors. So query not about stocks but about concepts.
+    Review and break down the gathered financial data and market context for: "{stock}" provided.
     Analyse the potential of given stock for delivering exponential returns and factors which might lead to it.
   expected_output: >
     A final, comprehensive investment consultation that clearly weights the advantage of taking position in given
     stock, and potential opportunity loss probability it may incur if execution is not followed through.
   agent: HighGrowthInvestor
 
-final_response_task:
+portfolio_management_task:
   description: >
-    Review the original user question: "{user_question}" for stock {stock}. Examine the parallel financial 
-    evaluations delivered by both the MarginOfSafetyInvestor and the HighGrowthInvestor. 
+    Review the primary client objective: "{user_question}" for {stock}. Assess the raw 
+    analytical dossiers provided independently by your value and growth research teams.
     
-    The user possesses an intermediate-to-advanced understanding of investment finance. 
-    Do NOT abstract away formulas, omit specific numbers, or summarize technical concepts into generic takeaways. 
-    You must fully preserve and cleanly integrate the explicit mathematical ratios, valuation margins of safety, 
-    ROCE thresholds, and behavioral traps pulled directly from Parag Parikh's and Saurabh Mukherjea's frameworks.
-    
-    Verify that:
-    1. The analysis provides an explicit, unequivocal, quantitative answer to the user's specific problem.
-    2. The core insights from all discovered investment texts in the knowledge base are preserved without data dilution.
-    3. The tone remains professional, mathematically rigorous, objective, and clear.
+    1. CONFLICT ADVISORY & ALLOCATION MAPPING: Review the data to see where your analyst 
+       frameworks clash. If the MarginOfSafetyInvestor and HighGrowthInvestor diverge on {stock}, 
+       do not force an artificial consensus. Map out the precise structural friction (e.g., 
+       "The company passes historical Coffee Can growth criteria but completely fails conservative 
+       Margin of Safety valuation limits").
+    2. QUANTITATIVE INTEGRATION: Ensure zero loss of technical depth. Maintain explicit formulas, 
+       numerical ROCE metrics, pricing-power data, and valuation ceilings intact. 
+    3. INTERACTIVE ADVISORY PREPARATION: Format this output so it serves both as a definitive 
+       multi-strategy report and the immediate memory foundation for follow-up conversational chat 
+       turns. If this is a real-time message stream loop, address the query using the existing data 
+       pool in your memory without attempting to rerun the scraping or extraction pipelines.
   expected_output: >
-    A completely vetted, data-dense final investment brief that directly resolves the user's specific scenario using intermediate financial terminology and raw quantitative data points.
-  agent: FinalResponseGenerator
+    A data-dense, professional PMS allocation brief that presents an uncompromised, parallel 
+    view of both Value and Growth metrics, delivering a definitive technical breakdown of 
+    how the asset fits into distinct investment mandates.
+  agent: PersonalPortfolioManager
