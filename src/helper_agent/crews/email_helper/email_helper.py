@@ -16,21 +16,38 @@ class EmailHelper():
     # Handled by @CrewBase, do not worry about populating these
     agents: list[BaseAgent]
     tasks: list[Task]
-
-    gemini = LLM(temperature=0.0,
-                 model="gemini/gemini-3.5-flash") # response format arg in this is a different kind one
+    gemini_small = LLM(
+        temperature=0.0,
+        model="gemini/gemini-2.5-flash"
+    ) # response format arg in this is a different kind one
+    gemini = LLM(
+        temperature=0.0,
+        model="gemini/gemini-2.5-flash"
+    ) # response format arg in this is a different kind one
+    groq_small = LLM(
+        temperature=0.0,
+        model="groq/llama-3.1-8b-instant"
+    )
+    groq_life = LLM(
+        temperature=0.0,
+        model="groq/llama-3.1-8b-instant"
+    )
+    groq_medium = LLM(
+        temperature=0.1,
+        model="groq/meta-llama/llama-4-scout-17b-16e-instruct"
+    )
     # Where did self.agents_config[] come from? and how does it map to the yaml file(s) ?
     # Well the @CrewBase decorator automatically visits and reads the yaml and makes them for us.
     @agent
-    def mail_assistant(self) -> Agent:
+    def mail_fetcher(self) -> Agent:
         if EmailHelper._gmail_tools is None: 
             EmailHelper._gmail_tools = get_crew_gmail_tools()
         return Agent(
-            config=self.agents_config['mail_assistant'], # type: ignore[index]
+            config=self.agents_config["mail_fetcher"],
             verbose=True,
-            # llm=self.gemini,
             tools=self._gmail_tools,
-            inject_date=True
+            inject_date=True,
+            llm=self.gemini_small
         )
 
     @agent
@@ -38,20 +55,36 @@ class EmailHelper():
         return Agent(
             config=self.agents_config['mail_summarizer'], # type: ignore[index]
             verbose=True,
-            tools=self._gmail_tools,
+            # tools=self._gmail_tools,
             llm=self.gemini,
         )
     
+    @agent
+    def mail_classifier(self) -> Agent:
+        return Agent(
+            config=self.agents_config['mail_assistant'], # type: ignore[index]
+            verbose=True,
+            inject_date=True,
+            # llm=self.groq_small leave it default for now
+        )
     # To learn more about structured task outputs,
     # task dependencies, and task callbacks, check out the documentation:
     # https://docs.crewai.com/concepts/tasks#overview-of-a-task
 
     ############# Taks order matter ##############
     @task
+    def email_fetcher(self) -> Task:
+        return Task(
+            config=self.tasks_config["email_fetcher"],
+            output_file=r"src\helper_agent\debug_files\fetched_emails.txt",
+            # output_json=Email_List
+        )
+    @task
     def email_summarization(self) -> Task:
         return Task(
             config=self.tasks_config['email_summary'],
             output_file=r"src\helper_agent\debug_files\summarized_emails.txt",
+            context=[self.email_fetcher()],
             output_json=Email_List # Output Pydantic causing internal server error 500
         )
     @task
@@ -59,6 +92,7 @@ class EmailHelper():
         return Task(
             config=self.tasks_config['email_sorter'], # type: ignore[index]
             output_file=r"src\helper_agent\debug_files\sorted_mails.txt",
+            context=[self.email_summarization()], 
             output_json=Email_Buckets
         )
     @crew

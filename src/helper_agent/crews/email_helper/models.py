@@ -13,5 +13,5 @@ class Email_Buckets(BaseModel):
     noble : Annotated[Optional[List[Email]], Field(description="mails requiring attention but not immeditely")]
     common : Annotated[Optional[List[Email]], Field(description="mails not requied to be read")] 
 
-class Email_List(Email):
+class Email_List(BaseModel):
     emails : Annotated[List[Email], Field(description="list of emails for user")]

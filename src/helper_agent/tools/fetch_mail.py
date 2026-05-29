@@ -39,7 +39,7 @@ class SummarizingGmailTool(BaseTool):
         self._lc_tool = lc_tool
 
     def _run(self, **kwargs) -> str:
-        kwargs['max_results'] = min(int(kwargs.get('max_results', 3)), 3) # might keep this 3 for testing
+        kwargs['max_results'] = min(int(kwargs.get('max_results', 3)), 1) # might keep this 3 for testing
         kwargs['resource'] = 'messages'  # agent keeps choosing threads, i need all email summary not thread
         raw_result = self._lc_tool.run(kwargs) ##### Langchain expects dict passed positionally, do not use **kwargs
         
@@ -50,38 +50,8 @@ class SummarizingGmailTool(BaseTool):
             # next function, clean_text need STRICTLY string input, that is why this part
 
         raw_result = clean_text(raw_result) # remove *SOME* garbage
-        ########## ------------- Trusting Another Online LLM to do this ------------------- ############
-        # response = ollama.chat(
-        #     model='llama3.2',
-        #     messages=[{'role': 'user', 'content': 
-        #         f"""You are an email parser. Extract and summarize each email from the raw data below.
-        #             For each email return sender email, subject, and a few sentence body summary.
-        #             Return ONLY a JSON array, no explanation, no markdown:
-        #             [
-        #                 {{
-        #                     "sender": "sender@email.com",
-        #                     "subject": "subject line",
-        #                     "body": "Intents behind the email summarized to a maximum of 5 sentences"
-        #                 }}
-        #             ]
-        #             Emails:
-        #             {raw_result}"""
-        #         }], format='json',    # forcing a json response so it can be translated to pydantic later if required, with ease
-        #             options={'num_ctx': 8192, 'temperature': 0.0} # default is 4096, can double again, but dam i wish for graphics card
-        #         )
-        
-        # with open(r"C:\Users\itizs\VSC\crewai\helper_agent\tests\sumarized.txt", 'w') as f:
-        #     f.write(response['message']['content'])
         with open(r"C:\Users\itizs\VSC\crewai\helper_agent\src\helper_agent\debug_files\raw_mail.txt", 'w') as f:
             f.write(raw_result)
-            
-        # try:
-        #     parsed = json.loads(response['message']['content'])
-        #     if not isinstance(parsed, list):
-        #         parsed = parsed.get('emails', list(parsed.values())[0] if parsed else [])
-        #     return json.dumps(parsed)
-        # except (json.JSONDecodeError, Exception):
-        #     return '[]'
         return raw_result
 
 

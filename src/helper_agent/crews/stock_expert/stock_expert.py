@@ -123,7 +123,7 @@ class StockExpert():
             verbose=True,
             inject_date=True,
             tools=[self.duck_search, self.yfin_search, self.website_scrpe],
-            llm=self.llama_small
+            llm=self.gemini_lite
         )
 
     @agent
